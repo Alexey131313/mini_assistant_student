@@ -19,7 +19,6 @@ async def create_document(document: DocumentCreate) -> DocumentOut:
     # Здесь будет реализация создания документа
     pass
 
-
 @app.get("/documents/{document_id}", response_model = DocumentOut, responses = {400: {"model": ErrorResponse}})
 async def get_document(document_id: int) -> DocumentOut:
     # Здесь будет реализация получения документа по ID

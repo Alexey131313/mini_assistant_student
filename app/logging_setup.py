@@ -8,4 +8,6 @@ import logging
 
 def setup_logging(level: str = "INFO") -> logging.Logger:
     """TODO: настроить уровень и формат, вернуть логгер."""
-    raise NotImplementedError
+    level = level.upper()
+    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    return logging.getLogger("mini_assistant")
