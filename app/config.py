@@ -4,9 +4,12 @@
 превращение пустой строки в None для необязательного поля.
 """
 from typing import Literal
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import field_validator
-from logging_setup import setup_logging
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .logging_setup import setup_logging
+
 
 class Settings(BaseSettings):
     """TODO: объявить поля настроек (список — в SPEC.md)."""
