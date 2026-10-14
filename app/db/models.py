@@ -6,7 +6,8 @@ TODO (M2): описать документ и чанк (поля и связь �
 
 from typing import ClassVar
 
-from sqlalchemy import Integer
+from sqlalchemy import Integer, DateTime, String, ForeignKey
+from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -18,6 +19,8 @@ class Document(Base):
     __tablename__: ClassVar[str] = "documents"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow, nullable=False)
 
 
 class Chunk(Base):
@@ -26,3 +29,7 @@ class Chunk(Base):
     __tablename__: ClassVar[str] = "chunks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    document_id: Mapped[int] = mapped_column(Integer, ForeignKey("documents.id"), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(String, nullable=False)
+    embedding: Mapped[list] = mapped_column(String, nullable=False) #????
