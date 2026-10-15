@@ -23,7 +23,7 @@ class FakeEmbedder:
         self.dim = dim
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        raise NotImplementedError
+        return [[float(hash(text) % 1000) / 1000] * self.dim for text in texts]
 
 
 class SentenceTransformerEmbedder:
@@ -33,7 +33,10 @@ class SentenceTransformerEmbedder:
         self.model_name = model_name
 
     def embed(self, texts: list[str]) -> list[list[float]]:
+        """TODO: лениво импортировать и использовать sentence-transformers.
+        """
         raise NotImplementedError
+        
 
 
 def create_embedder(settings: Settings) -> Embedder:

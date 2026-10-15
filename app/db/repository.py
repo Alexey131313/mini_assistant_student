@@ -5,7 +5,7 @@ TODO (M2): сохранение документа с чанками и функ
 """
 
 from sqlalchemy.orm import Session
-
+from sqlalchemy import select, func
 from .models import Chunk, Document
 
 
@@ -23,19 +23,23 @@ def create_document(session: Session, title: str, chunks: list[tuple[str, list[f
 
 def list_documents(session: Session) -> list[Document]:
     """TODO: вернуть документы (новые сверху)."""
-    return session.query(Document).order_by(Document.created_at.desc()).all()
+    stmt = select(Document).order_by(Document.created_at.desc())
+    return list(session.scalars(stmt).all())
 
 
 def get_document(session: Session, document_id: int) -> Document | None:
     """TODO: вернуть документ по id или None."""
-    return session.query(Document).filter(Document.id == document_id).first()
+    stmt =select(Document).where(Document.id == document_id)
+    return session.scalars(stmt).first()
 
 
 def count_chunks(session: Session, document_id: int) -> int:
     """TODO: число чанков у документа."""
-    return session.query(Chunk).filter(Chunk.document_id == document_id).count()
+    stmt = select(func.count()).select_from(Chunk).where(Chunk.document_id == document_id)
+    return session.scalar(stmt) or 0
 
 
 def list_chunks(session: Session) -> list[Chunk]:
     """TODO: все чанки (для поиска)."""
-    return session.query(Chunk).all()
+    stmt = select(Chunk)
+    return list(session.scalars(stmt).all())
