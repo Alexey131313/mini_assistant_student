@@ -48,7 +48,7 @@ class SentenceTransformerEmbedder:
 
 def create_embedder(settings: Settings) -> Embedder:
     """TODO: выбрать бэкенд по настройкам."""
-    if settings.embedder_model_name is None:
-        return FakeEmbedder(dim=settings.embedder_dim)
+    if settings.embed_model is None or settings.embed_backend == "fake":
+        return FakeEmbedder()
     else:
-        return SentenceTransformerEmbedder(model_name=settings.embedder_model_name)
+        return SentenceTransformerEmbedder(model_name=settings.embed_model)

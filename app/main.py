@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     settings = config._settings
     engine = make_engine(settings.database_url)
     session_factory = make_session_factory(engine)
-    embedder = await create_embedder(settings)
+    embedder = create_embedder(settings)
 
     app.state.settings = settings
     app.state.engine = engine
@@ -35,7 +35,7 @@ app = FastAPI(title="mini_assistant", version="1.0.0", lifespan = lifespan)
 async def health() -> HealthResponse:
     return HealthResponse()
 
-@app.post("/documents", response_model = DocumentOut, responses = {201: {"model": ErrorResponse}})
+@app.post("/documents", response_model = DocumentOut, status_code = 201, responses = {400: {"model": ErrorResponse}})
 async def create_document(document: DocumentCreate) -> DocumentOut:
     chunks = chunk_text(document.text)
     if not chunks:
@@ -43,28 +43,25 @@ async def create_document(document: DocumentCreate) -> DocumentOut:
     embedder = app.state.embedder
     embeddings = embedder.embed(chunks)
     chunks_and_embeddings = list(zip(chunks, embeddings, strict=True))
-    session = app.state.session_factory()
-    with session() as conn:
+    with app.state.session_factory() as conn:
         doc = repository.create_document(conn, document.title, chunks_and_embeddings)
         chunk_count = repository.count_chunks(conn, doc.id)
-        return DocumentOut(id=doc.id, title=doc.title, created_at=doc.created_at, chunk_count=chunk_count)
+        return DocumentOut(id=doc.id, title=doc.title, created_at=doc.created_at, chunks=chunk_count)
 
 @app.get("/documents/{id}", response_model = DocumentOut, responses = {400: {"model": ErrorResponse}})
 async def get_document(id: int) -> DocumentOut:
-    session = app.state.session_factory()
-    with session() as conn:
+    with app.state.session_factory() as conn:
         doc = repository.get_document(conn, id)
         if doc is None:
             raise HTTPException(status_code=404, detail="Document not found.")
         chunk_count = repository.count_chunks(conn, doc.id)
-        return DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunk_count=chunk_count)
+        return DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunks=chunk_count)
 
 @app.get("/documents", response_model = list[DocumentOut], responses = {400: {"model": ErrorResponse}})
 async def list_documents() -> list[DocumentOut]:
-    session = app.state.session_factory()
-    with session() as conn:
+    with app.state.session_factory() as conn:
         docs = repository.list_documents(conn)
-        return [DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunk_count = repository.count_chunks(conn, doc.id)) for doc in docs]
+        return [DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunks=repository.count_chunks(conn, doc.id)) for doc in docs]
 
 if __name__ == "__main__":
     import uvicorn
