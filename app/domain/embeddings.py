@@ -13,7 +13,8 @@ from ..config import Settings
 class Embedder(Protocol):
     """Превращает список текстов в список векторов."""
 
-    def embed(self, texts: list[str]) -> list[list[float]]: ...
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        ...
 
 
 class FakeEmbedder:
@@ -31,14 +32,23 @@ class SentenceTransformerEmbedder:
 
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
+        self._model = None
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         """TODO: лениво импортировать и использовать sentence-transformers.
         """
-        raise NotImplementedError
+        if self.model_name is None:
+            raise ValueError("Model name is not specified.")
+        if self._model is None:
+            from sentence_transformers import SentenceTransformer
+            self._model = SentenceTransformer(self.model_name)
+        return self._model.encode(texts, convert_to_numpy=True).tolist()
         
 
 
 def create_embedder(settings: Settings) -> Embedder:
     """TODO: выбрать бэкенд по настройкам."""
-    raise NotImplementedError
+    if settings.embedder_model_name is None:
+        return FakeEmbedder(dim=settings.embedder_dim)
+    else:
+        return SentenceTransformerEmbedder(model_name=settings.embedder_model_name)

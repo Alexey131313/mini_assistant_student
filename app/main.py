@@ -4,20 +4,30 @@ TODO (M0–M5): конфигурация, зависимости, lifespan (дв
 LLM-клиент) и маршруты. Список маршрутов и их поведение — в SPEC.md.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
+from app.db import repository
 from app.schemas import HealthResponse, DocumentCreate, DocumentOut, AskRequest, AskResponse, ErrorResponse
-from app.config import Settings
-from app.db.base import create_engine, make_session_factory
+from app.config import Settings, Config
+from app.db.base import make_engine, make_session_factory
 from app.domain.embeddings import create_embedder
+from app.domain.chunking import chunk_text
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = await Settings()
-    engine = await create_engine(settings.database_url)
-    session_factory = await make_session_factory(engine)
-    embedder = await create_embedder(settings.embedder_model, settings.embedder_dim)
+    config = Config(Settings())
+    settings = config._settings
+    engine = make_engine(settings.database_url)
+    session_factory = make_session_factory(engine)
+    embedder = await create_embedder(settings)
+
+    app.state.settings = settings
+    app.state.engine = engine
+    app.state.session_factory = session_factory
+    app.state.embedder = embedder
     yield
+
+    engine.dispose()
 
 app = FastAPI(title="mini_assistant", version="1.0.0", lifespan = lifespan)
 
@@ -25,20 +35,36 @@ app = FastAPI(title="mini_assistant", version="1.0.0", lifespan = lifespan)
 async def health() -> HealthResponse:
     return HealthResponse()
 
-@app.post("/documents", response_model = DocumentCreate, responses = {400: {"model": ErrorResponse}})
+@app.post("/documents", response_model = DocumentOut, responses = {201: {"model": ErrorResponse}})
 async def create_document(document: DocumentCreate) -> DocumentOut:
-    # Здесь будет реализация создания документа
-    pass
+    chunks = chunk_text(document.text)
+    if not chunks:
+        raise HTTPException(status_code=400, detail="Document text is empty or cannot be chunked.")
+    embedder = app.state.embedder
+    embeddings = embedder.embed(chunks)
+    chunks_and_embeddings = list(zip(chunks, embeddings, strict=True))
+    session = app.state.session_factory()
+    with session() as conn:
+        doc = repository.create_document(conn, document.title, chunks_and_embeddings)
+        chunk_count = repository.count_chunks(conn, doc.id)
+        return DocumentOut(id=doc.id, title=doc.title, created_at=doc.created_at, chunk_count=chunk_count)
 
 @app.get("/documents/{id}", response_model = DocumentOut, responses = {400: {"model": ErrorResponse}})
 async def get_document(id: int) -> DocumentOut:
-    # Здесь будет реализация получения документа по ID
-    pass
+    session = app.state.session_factory()
+    with session() as conn:
+        doc = repository.get_document(conn, id)
+        if doc is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        chunk_count = repository.count_chunks(conn, doc.id)
+        return DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunk_count=chunk_count)
 
 @app.get("/documents", response_model = list[DocumentOut], responses = {400: {"model": ErrorResponse}})
 async def list_documents() -> list[DocumentOut]:
-    # Здесь будет реализация получения списка документов
-    pass
+    session = app.state.session_factory()
+    with session() as conn:
+        docs = repository.list_documents(conn)
+        return [DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunk_count = repository.count_chunks(conn, doc.id)) for doc in docs]
 
 if __name__ == "__main__":
     import uvicorn
