@@ -24,7 +24,7 @@ class FakeEmbedder:
         self.dim = dim
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        return [[float(hash(text) % 1000) / 1000] * self.dim for text in texts]
+        return [list(hashlib.sha256(text.encode("utf-8")).digest()[:self.dim]) for text in texts]
 
 
 class SentenceTransformerEmbedder:

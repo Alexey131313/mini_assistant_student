@@ -23,7 +23,7 @@ def cosine(a: list[float], b: list[float]) -> float:
 def top_k(query: list[float], items: list[tuple[int, list[float]]], k: int) -> list[tuple[int, float]]:
     """TODO: топ-k пар (id, score)."""
     scores = [(item_id, cosine(query, embedding)) for item_id, embedding in items]
-    scores.sort(key = lambda items: items[1], reverse = True)
+    scores.sort(key = lambda items: (-items[1], items[0]))
     if k > len(scores):
         return scores
     return scores[:k]
