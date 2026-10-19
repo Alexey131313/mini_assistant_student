@@ -12,6 +12,7 @@ from app.config import Settings, Config
 from app.db.base import make_engine, make_session_factory
 from app.domain.embeddings import create_embedder
 from app.domain.chunking import chunk_text
+from app.domain.llm_client import LLMClient
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,11 +21,13 @@ async def lifespan(app: FastAPI):
     engine = make_engine(settings.database_url)
     session_factory = make_session_factory(engine)
     embedder = create_embedder(settings)
+    llm = LLMClient(settings)
 
     app.state.settings = settings
     app.state.engine = engine
     app.state.session_factory = session_factory
     app.state.embedder = embedder
+    app.state.llm = llm
     yield
 
     engine.dispose()

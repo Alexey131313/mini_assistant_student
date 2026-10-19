@@ -28,7 +28,7 @@ class DocumentOut(BaseModel):
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Запрос пользователя")
-    k: Optional[str] = Field(default=None, description="Идентификатор чата для контекста")
+    k: int | None = Field(default=None, ge = 1, le = 20,description="Количество чанков, которые нужно взять из базы")
 
 
 class SourceOut(BaseModel):
