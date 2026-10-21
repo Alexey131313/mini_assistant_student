@@ -6,6 +6,7 @@ TODO (M2): базовый класс моделей, создание движк
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+
 class Base(DeclarativeBase):
     """TODO: базовый класс ORM-моделей."""
     pass

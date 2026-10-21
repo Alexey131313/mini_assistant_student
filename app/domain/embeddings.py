@@ -5,6 +5,7 @@ sentence-transformers. Модель импортировать лениво (в�
 тесты не тянули torch. Поведение — в SPEC.md.
 """
 
+import hashlib
 from typing import Protocol
 
 from ..config import Settings

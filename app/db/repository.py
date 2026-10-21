@@ -4,8 +4,9 @@ TODO (M2): сохранение документа с чанками и функ
 Сигнатуры сохранить — на них опираются тесты.
 """
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+
 from .models import Chunk, Document
 
 

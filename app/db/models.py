@@ -4,7 +4,7 @@ TODO (M2): описать документ и чанк (поля и связь �
 Ниже — заготовки с первичным ключом; остальные поля добавь сам.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import ClassVar
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text

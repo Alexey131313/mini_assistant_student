@@ -4,8 +4,8 @@ TODO (M4–M5): обычный ответ и поток. Формат стрим
 tests/unit/test_llm_client.py.
 """
 
-from collections.abc import AsyncIterator
 import json
+from collections.abc import AsyncIterator
 
 import httpx
 
@@ -66,8 +66,7 @@ class LLMClient:
             "messages": messages,
             "stream": True,
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            async with client.stream("POST", url, json = payload, headers = headers) as response:
+        async with (httpx.AsyncClient(timeout=self.timeout) as client, client.stream("POST", url, json = payload, headers = headers) as response):
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     delta = extract_delta(line)

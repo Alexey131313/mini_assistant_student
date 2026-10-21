@@ -6,7 +6,7 @@ from alembic import context
 
 from app.config import Settings
 from app.db.base import Base, make_engine
-from app.db.models import Chunk, Document #noqa
+from app.db.models import Chunk, Document  #noqa
 
 config = context.config
 if config.config_file_name is not None:
