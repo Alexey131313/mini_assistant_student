@@ -12,7 +12,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mini} -d ${POSTGRES_DB:-mini_assistant}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mini} -d ${POSTGRES_DB:-mini_assistant}" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,6 +24,32 @@ services:
       - "8081:8080"
     depends_on:
       - db
+
+  llm:
+    image: ${LLM_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    container_name: mini_assistant_llm
+    gpus: all
+    ports:
+      - "${LLM_PORT:-18080}:8080"
+    volumes:
+      - ./app/models/gguf:/models:ro
+    command:
+      - -m
+      - /models/${MODEL_NAME:-qwen2.5-1.5b-instruct-q4_k_m.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -ngl
+      - "${NGL:-99}"
+      - -c
+      - "4096"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/health | grep -q '\"ok\"'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 90
+      start_period: 10s
 
 volumes:
   pgdata:
