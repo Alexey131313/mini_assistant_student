@@ -27,6 +27,45 @@ class FakeEmbedder:
     def embed(self, texts: list[str]) -> list[list[float]]:
         return [list(hashlib.sha256(text.encode("utf-8")).digest()[:self.dim]) for text in texts]
 
+class CachedEmbedder:
+    """Добавляет кэширование к любому объекту Embedder."""
+
+    def __init__(self, embedder: Embedder, backend: str, model: str) -> None:
+        self.embedder = embedder
+        self.backend = backend
+        self.model = model
+        self.cache: dict[str, list[float]] = {}
+
+    def _make_cache_key(self, text: str) -> str:
+        value = f"{self.backend}:{self.model}:{text}"
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        result: list[list[float] | None] = [None] * len(texts)
+        missing_texts: list[str] = []
+        missing_indexes: list[int] = []
+
+        for index, text in enumerate(texts):
+            key = self._make_cache_key(text)
+            if key in self.cache:
+                result[index] = list(self.cache[key])
+            else:
+                missing_texts.append(text)
+                missing_indexes.append(index)
+
+        if missing_texts:
+            new_embeddings = self.embedder.embed(missing_texts)
+            if len(new_embeddings) != len(missing_texts):
+                raise ValueError("Embedder returned a different number of embeddings than input texts.")
+
+            for index, text, embedding in zip(missing_indexes, missing_texts, new_embeddings, strict=True):
+                key = self._make_cache_key(text)
+                vector = list(embedding)
+                self.cache[key] = vector
+                result[index] = list(vector)
+
+        return [embedding for embedding in result if embedding is not None]
+
 
 class SentenceTransformerEmbedder:
     """TODO: настоящие эмбеддинги."""
@@ -50,6 +89,8 @@ class SentenceTransformerEmbedder:
 def create_embedder(settings: Settings) -> Embedder:
     """TODO: выбрать бэкенд по настройкам."""
     if settings.embed_model is None or settings.embed_backend == "fake":
-        return FakeEmbedder()
+        base_embedder: Embedder = FakeEmbedder()
     else:
-        return SentenceTransformerEmbedder(model_name=settings.embed_model)
+        base_embedder = SentenceTransformerEmbedder(model_name=settings.embed_model)
+
+    return CachedEmbedder(embedder=base_embedder, backend=settings.embed_backend, model=settings.embed_model)

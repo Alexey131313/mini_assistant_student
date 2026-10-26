@@ -45,8 +45,8 @@ async def health() -> HealthResponse:
     return HealthResponse()
 
 @app.post("/documents", response_model = DocumentOut, status_code = 201, responses = {400: {"model": ErrorResponse}})
-async def create_document(document: DocumentCreate, chunk_size: int, chunk_overlap: int) -> DocumentOut:
-    chunks = chunk_text(document.text, chunk_size, chunk_overlap)
+async def create_document(document: DocumentCreate) -> DocumentOut:
+    chunks = chunk_text(document.text)
     if not chunks:
         raise HTTPException(status_code=400, detail="Document text is empty or cannot be chunked.")
     embeddings = app.state.embedder.embed(chunks)
