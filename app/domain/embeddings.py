@@ -41,9 +41,9 @@ class CachedEmbedder:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        result: list[list[float] | None] = [None] * len(texts)
-        missing_texts: list[str] = []
-        missing_indexes: list[int] = []
+        result = [None] * len(texts)
+        missing_texts = []
+        missing_indexes = []
 
         for index, text in enumerate(texts):
             key = self._make_cache_key(text)

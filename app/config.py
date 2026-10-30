@@ -9,6 +9,7 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logging_setup import setup_logging
+import logging
 
 
 class Settings(BaseSettings):
@@ -53,6 +54,11 @@ class Config:
     
     '''def __del__(self):
         Config.__instance = None'''
+    def get_settings(self) -> Settings:
+        return self._settings
+
+    def get_logger(self) -> logging.Logger:
+        return self._logger
 
     def start_logging(self) -> None:
         if self._logger is None:
