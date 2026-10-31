@@ -10,14 +10,13 @@ import numpy as np
 
 def cosine(a: list[float], b: list[float]) -> float:
     """TODO: косинусная близость; нулевой вектор → 0.0."""
-    a = np.array(a)
-    b = np.array(b)
-    na = np.linalg.norm(a)
-    nb = np.linalg.norm(b)
+    ar = np.array(a, dtype = float)
+    br = np.array(b, dtype = float)
+    na = np.linalg.norm(ar)
+    nb = np.linalg.norm(br)
     if na == 0 or nb == 0:
-        return 0.0
-    res = np.dot(a, b) / (na * nb)
-    return res
+        return 0.0 
+    return float(np.dot(ar, br) / (na * nb))
 
 
 def top_k(query: list[float], items: list[tuple[int, list[float]]], k: int) -> list[tuple[int, float]]:

@@ -5,7 +5,6 @@ TODO (M2): описать документ и чанк (поля и связь �
 """
 
 from datetime import UTC, datetime
-from typing import ClassVar
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -16,7 +15,7 @@ from .base import Base
 class Document(Base):
     """TODO: поля title и created_at, связь с чанками."""
 
-    __tablename__: ClassVar[str] = "documents"
+    __tablename__ = "documents"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -26,10 +25,10 @@ class Document(Base):
 class Chunk(Base):
     """TODO: поля document_id, position, text, embedding и связь с документом."""
 
-    __tablename__: ClassVar[str] = "chunks"
+    __tablename__ = "chunks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     document_id: Mapped[int] = mapped_column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list] = mapped_column(JSON, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(JSON, nullable=False)

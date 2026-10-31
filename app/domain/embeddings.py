@@ -6,7 +6,7 @@ sentence-transformers. Модель импортировать лениво (в�
 """
 
 import hashlib
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from ..config import Settings
 
@@ -41,9 +41,9 @@ class CachedEmbedder:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        result = [None] * len(texts)
-        missing_texts = []
-        missing_indexes = []
+        result: list[list[float]] = [[] for _ in texts]
+        missing_texts: list[str] = []
+        missing_indexes: list[int] = []
 
         for index, text in enumerate(texts):
             key = self._make_cache_key(text)
@@ -63,8 +63,11 @@ class CachedEmbedder:
                 vector = list(embedding)
                 self.cache[key] = vector
                 result[index] = list(vector)
-
-        return [embedding for embedding in result if embedding is not None]
+        vectors: list[list[float]] = []
+        for embedding in result:
+            if embedding is not None:
+                vectors.append(embedding)
+        return vectors
 
 
 class SentenceTransformerEmbedder:
@@ -72,7 +75,7 @@ class SentenceTransformerEmbedder:
 
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
-        self._model = None
+        self._model: Any |None = None
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         """TODO: лениво импортировать и использовать sentence-transformers.
@@ -82,7 +85,8 @@ class SentenceTransformerEmbedder:
         if self._model is None:
             from sentence_transformers import SentenceTransformer
             self._model = SentenceTransformer(self.model_name)
-        return self._model.encode(texts, convert_to_numpy=True).tolist()
+            encoded = self._model.encode(texts, convert_to_numpy=True).tolist()
+        return cast(list[list[float]], encoded)
         
 
 

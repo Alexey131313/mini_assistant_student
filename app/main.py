@@ -5,6 +5,7 @@ LLM-клиент) и маршруты. Список маршрутов и их �
 """
 
 import json
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import httpx
@@ -15,14 +16,14 @@ from app.config import Config, Settings
 from app.db import repository
 from app.db.base import make_engine, make_session_factory
 from app.domain.chunking import chunk_text
-from app.domain.embeddings import create_embedder
+from app.domain.embeddings import Embedder, create_embedder
 from app.domain.llm_client import LLMClient
 from app.domain.retrieval import top_k
 from app.schemas import AskRequest, AskResponse, DocumentCreate, DocumentOut, ErrorResponse, HealthResponse, SourceOut
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     config = Config(Settings())
     settings = config.get_settings()
     config.start_logging()
@@ -83,7 +84,7 @@ async def list_documents() -> list[DocumentOut]:
         app.state.logger.info(f"{len(docs)} documents retrieved.")
         return [DocumentOut(id = doc.id, title = doc.title, created_at = doc.created_at, chunks=repository.count_chunks(conn, doc.id)) for doc in docs]
 
-async def augmentation(question: str, embedder, k: int) -> tuple[list[dict[str,str]], list[SourceOut]]:
+async def augmentation(question: str, embedder: Embedder, k: int | None) -> tuple[list[dict[str,str]], list[SourceOut]]:
     app.state.logger.info(f"Augmenting question: {question}")
     query_embedding = embedder.embed([question])[0]
     k = k if k is not None else app.state.settings.top_k
@@ -130,7 +131,7 @@ async def ask(request: AskRequest) -> AskResponse:
     app.state.logger.info(f"Answer generated: {answer}")
     return AskResponse(answer=answer, sources=sources)
 
-async def generate_stream(messages: list[dict[str, str]]):
+async def generate_stream(messages: list[dict[str, str]]) -> AsyncIterator[str]:
     try:
         async for delta in app.state.llm.stream(messages):
             event = {"token": delta}

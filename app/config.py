@@ -3,13 +3,13 @@
 Заполнить по SPEC.md (веха M1): набор полей, чтение из .env/окружения,
 превращение пустой строки в None для необязательного поля.
 """
+import logging
 from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .logging_setup import setup_logging
-import logging
 
 
 class Settings(BaseSettings):
@@ -41,10 +41,10 @@ class Settings(BaseSettings):
 class Config:
     """TODO: хранить настройки и логгер, уметь останавливать логирование."""
     __instance = None
-    _settings = None
-    _logger = None
+    _settings: Settings | None = None
+    _logger: logging.Logger | None = None
 
-    def __new__(cls, settings: Settings):
+    def __new__(cls, settings: Settings) -> "Config":
         if cls.__instance is None:
             instance = super().__new__(cls)
             instance._settings = settings
@@ -52,15 +52,25 @@ class Config:
             cls.__instance = instance
         return cls.__instance
     
-    '''def __del__(self):
-        Config.__instance = None'''
+    @classmethod
+    def reset(cls) -> None:
+        if cls.__instance is not None:
+            cls.__instance.stop_logging()
+        cls.__instance = None
+
     def get_settings(self) -> Settings:
+        if self._settings is None:
+            raise ValueError("Settings have not been initialized.")
         return self._settings
 
     def get_logger(self) -> logging.Logger:
+        if self._logger is None:
+            raise ValueError("Logger has not been initialized.")
         return self._logger
 
     def start_logging(self) -> None:
+        if self._settings is None:
+            raise ValueError("Settings have not been initialized.")
         if self._logger is None:
             self._logger = setup_logging(self._settings.log_level)
 
@@ -79,4 +89,4 @@ def get_config() -> Config:
 
 def reset_config() -> None:
     """TODO: сбросить singleton (нужно тестам)."""
-    Config.__del__()
+    Config.reset()

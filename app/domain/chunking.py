@@ -14,10 +14,10 @@ def chunk_text(text: str, size: int = 500, overlap: int = 50) -> list[str]:
     text = text.strip()
     if not text:
             return []
-    paragraphs = text.split("\n\n")
-    chunks = []
-    current_chunk_parts = []
-    current_length = 0
+    paragraphs: list[str] = text.split("\n\n")
+    chunks: list[str] = []
+    current_chunk_parts: list[str] = []
+    current_length: int = 0
     
     for para in paragraphs:
         para = para.strip()

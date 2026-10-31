@@ -6,6 +6,7 @@ tests/unit/test_llm_client.py.
 
 import json
 from collections.abc import AsyncIterator
+from typing import cast
 
 import httpx
 
@@ -23,7 +24,8 @@ def extract_delta(line: str) -> str | None:
         if not choices:
             return None
         delta = choices[0].get("delta", {})
-        return delta.get("content")
+        content = delta.get("content")
+        return cast(str | None, content)
     except json.JSONDecodeError:
         return None
 
@@ -52,7 +54,8 @@ class LLMClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(url, json = payload, headers = headers)
             response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
+            content = response.json()["choices"][0]["message"]["content"]
+            return cast(str, content)
 
     async def stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
         """TODO: поток кусочков ответа."""

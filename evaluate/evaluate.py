@@ -1,8 +1,8 @@
+import json
 import statistics
 import time
 
 import httpx
-import json
 
 API_URL = "http://localhost:8000/ask"
 QUESTIONS = [
